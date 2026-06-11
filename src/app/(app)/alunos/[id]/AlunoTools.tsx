@@ -35,6 +35,8 @@ export default function AlunoTools({ aluno }: { aluno: Aluno }) {
   // editar
   const [form, setForm] = useState({
     nome: aluno.nome,
+    email: aluno.email ?? "",
+    telefone: aluno.telefone ?? "",
     objetivo: aluno.objetivo ?? "",
     plano: aluno.plano,
     valor: Number(aluno.valor_mensalidade),
@@ -75,6 +77,8 @@ export default function AlunoTools({ aluno }: { aluno: Aluno }) {
       .from("alunos")
       .update({
         nome: form.nome,
+        email: form.email || null,
+        telefone: form.telefone || null,
         objetivo: form.objetivo || null,
         plano: form.plano,
         valor_mensalidade: form.valor,
@@ -238,6 +242,12 @@ export default function AlunoTools({ aluno }: { aluno: Aluno }) {
               <form onSubmit={salvarEdicao} className="space-y-3">
                 <input className="input" required value={form.nome}
                   onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Nome" />
+                <input className="input" type="email" value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="E-mail (necessário p/ acesso ao app)" />
+                <input className="input" type="tel" value={form.telefone}
+                  onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+                  placeholder="WhatsApp (DDD + número)" />
                 <input className="input" value={form.objetivo}
                   onChange={(e) => setForm({ ...form, objetivo: e.target.value })} placeholder="Objetivo" />
                 <div className="grid grid-cols-2 gap-3">
