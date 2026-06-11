@@ -39,7 +39,14 @@ export default async function MaisPage() {
         <StatBox valor="⭐ 4.9" label="Avaliação" />
       </div>
 
-      <MaisClient planoApp={profile?.plano_app ?? "pro"} />
+      <MaisClient
+        planoApp={profile?.plano_app ?? "pro"}
+        perfil={{
+          nome: profile?.nome ?? "",
+          cref: profile?.cref ?? "",
+          especialidades: profile?.especialidades ?? [],
+        }}
+      />
     </div>
   );
 }

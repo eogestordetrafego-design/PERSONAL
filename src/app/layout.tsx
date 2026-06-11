@@ -4,6 +4,8 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "FitCoach Pro",
   description: "Gestão completa para personal trainers",
+  manifest: "/manifest.webmanifest",
+  icons: { icon: "/icon.svg" },
 };
 
 export const viewport: Viewport = {

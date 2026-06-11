@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Avatar, Badge, Card, ProgressBar, categoriaInfo, planoLabel, statusBadge } from "@/components/ui";
 import { brl, hora, idade } from "@/lib/format";
 import WeightChart from "./WeightChart";
+import AlunoTools from "./AlunoTools";
 import {
   IconArrowLeft,
   IconBarbell,
@@ -94,6 +95,19 @@ export default async function AlunoPage({ params }: { params: { id: string } }) 
         </div>
       </div>
 
+      <AlunoTools
+        aluno={{
+          id: aluno.id,
+          nome: aluno.nome,
+          objetivo: aluno.objetivo,
+          plano: aluno.plano,
+          valor_mensalidade: Number(aluno.valor_mensalidade),
+          status: aluno.status,
+          altura_cm: aluno.altura_cm,
+          meta_peso_kg: aluno.meta_peso_kg ? Number(aluno.meta_peso_kg) : null,
+        }}
+      />
+
       <div className="grid grid-cols-3 gap-2.5">
         {metricas.map((m) => (
           <Card key={m.l} className="text-center !p-3">
@@ -173,12 +187,12 @@ export default async function AlunoPage({ params }: { params: { id: string } }) 
       </section>
 
       <div className="flex gap-3">
-        <button
-          className="flex-1 border border-line rounded-2xl py-3.5 font-bold text-sm flex items-center justify-center gap-2 text-txt2"
-          title="Chat disponível na fase 2"
+        <Link
+          href={`/chat/${aluno.id}`}
+          className="flex-1 border border-line rounded-2xl py-3.5 font-bold text-sm flex items-center justify-center gap-2 hover:bg-card transition-all duration-150"
         >
           <IconMessage size={18} /> Mensagem
-        </button>
+        </Link>
         <Link
           href="/agenda"
           className="flex-1 bg-accent text-bg rounded-2xl py-3.5 font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all duration-150"

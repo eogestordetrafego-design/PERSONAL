@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Avatar, Badge, Card, ProgressBar, StatBox, statusBadge } from "@/components/ui";
 import { brl, dataLonga, hora, saudacao } from "@/lib/format";
-import { IconBell } from "@tabler/icons-react";
+import { IconAlertTriangle, IconBell } from "@tabler/icons-react";
 
 export const dynamic = "force-dynamic";
 
@@ -16,18 +16,56 @@ export default async function Dashboard() {
   const ini = new Date(hoje); ini.setHours(0, 0, 0, 0);
   const fim = new Date(hoje); fim.setHours(23, 59, 59, 999);
 
-  const [{ data: profile }, { data: sessoes }, { data: ativos }] = await Promise.all([
-    supabase.from("profiles").select("nome").eq("id", user!.id).single(),
-    supabase
-      .from("sessoes")
-      .select("id, inicio, status, alunos(nome, cor_avatar), treinos(nome, categoria)")
-      .gte("inicio", ini.toISOString())
-      .lte("inicio", fim.toISOString())
-      .order("inicio"),
-    supabase.from("alunos").select("id, nome, cor_avatar, meta_peso_kg, objetivo, valor_mensalidade, status").eq("status", "ativo"),
-  ]);
+  const mesAtualIni = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().slice(0, 10);
+  const mesAnteriorIni = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1).toISOString().slice(0, 10);
 
-  const receita = (ativos ?? []).reduce((s, a) => s + Number(a.valor_mensalidade), 0);
+  const [{ data: profile }, { data: sessoes }, { data: ativos }, { count: naoLidas }, { data: pagos }, { data: ultimasSessoes }] =
+    await Promise.all([
+      supabase.from("profiles").select("nome").eq("id", user!.id).single(),
+      supabase
+        .from("sessoes")
+        .select("id, inicio, status, alunos(nome, cor_avatar), treinos(nome, categoria)")
+        .gte("inicio", ini.toISOString())
+        .lte("inicio", fim.toISOString())
+        .order("inicio"),
+      supabase.from("alunos").select("id, nome, cor_avatar, meta_peso_kg, objetivo, valor_mensalidade, status").eq("status", "ativo"),
+      supabase.from("mensagens").select("*", { count: "exact", head: true }).eq("lida", false).eq("autor", "aluno"),
+      supabase.from("pagamentos").select("valor, pago_em").eq("status", "pago").gte("pago_em", mesAnteriorIni),
+      supabase
+        .from("sessoes")
+        .select("aluno_id, inicio")
+        .neq("status", "cancelada")
+        .lte("inicio", new Date().toISOString())
+        .order("inicio", { ascending: false })
+        .limit(300),
+    ]);
+
+  // receita real: pagamentos pagos no mês vs mês anterior
+  const recebidoMes = (pagos ?? [])
+    .filter((p) => p.pago_em && p.pago_em >= mesAtualIni)
+    .reduce((s, p) => s + Number(p.valor), 0);
+  const recebidoAnterior = (pagos ?? [])
+    .filter((p) => p.pago_em && p.pago_em < mesAtualIni)
+    .reduce((s, p) => s + Number(p.valor), 0);
+  const deltaPct = recebidoAnterior > 0 ? Math.round(((recebidoMes - recebidoAnterior) / recebidoAnterior) * 100) : null;
+  const receita = recebidoMes;
+
+  // retenção: alunos ativos sem sessão há 7+ dias
+  const ultimaPorAluno = new Map<string, string>();
+  (ultimasSessoes ?? []).forEach((s) => {
+    if (!ultimaPorAluno.has(s.aluno_id)) ultimaPorAluno.set(s.aluno_id, s.inicio);
+  });
+  const emRisco = (ativos ?? [])
+    .map((a) => {
+      const ultima = ultimaPorAluno.get(a.id);
+      const dias = ultima
+        ? Math.floor((Date.now() - new Date(ultima).getTime()) / 864e5)
+        : null;
+      return { ...a, dias };
+    })
+    .filter((a) => a.dias === null || a.dias >= 7)
+    .sort((x, y) => (y.dias ?? 999) - (x.dias ?? 999))
+    .slice(0, 3);
   const primeiroNome = (profile?.nome ?? "Coach").split(" ")[0];
   const proxima = (sessoes ?? []).find(
     (s) => new Date(s.inicio) > new Date() && s.status !== "cancelada"
@@ -64,18 +102,24 @@ export default async function Dashboard() {
           </h1>
           <p className="text-txt2 text-xs capitalize mt-0.5">{dataLonga(hoje)}</p>
         </div>
-        <button className="relative w-10 h-10 rounded-2xl bg-card border border-line flex items-center justify-center">
+        <Link href="/chat" className="relative w-10 h-10 rounded-2xl bg-card border border-line flex items-center justify-center">
           <IconBell size={20} className="text-txt2" />
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-danger text-[9px] font-black flex items-center justify-center">
-            3
-          </span>
-        </button>
+          {(naoLidas ?? 0) > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-danger text-[9px] font-black flex items-center justify-center">
+              {naoLidas}
+            </span>
+          )}
+        </Link>
       </header>
 
       <div className="flex gap-3 overflow-x-auto -mx-4 px-4">
         <StatBox valor={String(sess.length)} label="Aulas hoje" />
         <StatBox valor={String((ativos ?? []).length)} label="Alunos ativos" />
-        <StatBox valor={brl(receita)} label={`Receita ${hoje.toLocaleDateString("pt-BR", { month: "long" })}`} delta="+12% vs mês anterior" />
+        <StatBox
+          valor={brl(receita)}
+          label={`Recebido em ${hoje.toLocaleDateString("pt-BR", { month: "long" })}`}
+          delta={deltaPct !== null ? `${deltaPct > 0 ? "+" : ""}${deltaPct}% vs mês anterior` : undefined}
+        />
       </div>
 
       {proxima && (
@@ -116,6 +160,28 @@ export default async function Dashboard() {
           })}
         </div>
       </section>
+
+      {emRisco.length > 0 && (
+        <section>
+          <h2 className="font-black text-sm mb-3 flex items-center gap-1.5">
+            <IconAlertTriangle size={16} className="text-warn" /> Risco de desistência
+          </h2>
+          <Card className="space-y-3 border-warn/30">
+            {emRisco.map((a) => (
+              <Link key={a.id} href={`/chat/${a.id}`} className="flex items-center gap-3">
+                <Avatar nome={a.nome} cor={a.cor_avatar} size="sm" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold truncate">{a.nome}</p>
+                  <p className="text-[11px] text-warn">
+                    {a.dias === null ? "Nenhuma sessão registrada" : `Sem treinar há ${a.dias} dias`}
+                  </p>
+                </div>
+                <span className="text-[11px] font-bold text-accent">Mandar mensagem →</span>
+              </Link>
+            ))}
+          </Card>
+        </section>
+      )}
 
       <section>
         <h2 className="font-black text-sm mb-3">Progresso dos alunos</h2>

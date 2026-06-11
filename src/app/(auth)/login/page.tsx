@@ -6,7 +6,6 @@ import { IconBolt, IconBrandGoogle } from "@tabler/icons-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const supabase = createClient();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("rafael@fitcoach.com");
   const [senha, setSenha] = useState("");
@@ -18,6 +17,7 @@ export default function LoginPage() {
     e.preventDefault();
     setErro(null);
     setLoading(true);
+    const supabase = createClient();
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
       if (error) setErro("E-mail ou senha inválidos.");
@@ -43,6 +43,7 @@ export default function LoginPage() {
   }
 
   async function google() {
+    const supabase = createClient();
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${location.origin}/auth/callback` },
@@ -51,6 +52,7 @@ export default function LoginPage() {
 
   async function resetSenha() {
     if (!email) return setErro("Informe seu e-mail para redefinir a senha.");
+    const supabase = createClient();
     await supabase.auth.resetPasswordForEmail(email);
     setErro("Enviamos um link de redefinição para seu e-mail.");
   }

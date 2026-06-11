@@ -1,13 +1,16 @@
 "use client";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Badge, Card } from "@/components/ui";
 import { Toggle } from "@/components/ui/client";
+import { toast } from "@/components/Toast";
 import {
   IconUser,
   IconCreditCard,
   IconBell,
   IconMoon,
+  IconMessage,
   IconQrcode,
   IconBrandWhatsapp,
   IconChartBar,
@@ -15,6 +18,7 @@ import {
   IconHelp,
   IconLogout,
   IconChevronRight,
+  IconX,
 } from "@tabler/icons-react";
 
 function Row({
@@ -44,8 +48,17 @@ function Row({
   );
 }
 
-export default function MaisClient({ planoApp }: { planoApp: string }) {
+type Perfil = { nome: string; cref: string; especialidades: string[] };
+
+export default function MaisClient({ planoApp, perfil }: { planoApp: string; perfil: Perfil }) {
   const router = useRouter();
+  const [modal, setModal] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [form, setForm] = useState({
+    nome: perfil.nome,
+    cref: perfil.cref,
+    especialidades: perfil.especialidades.join(", "),
+  });
 
   async function sair() {
     const supabase = createClient();
@@ -54,14 +67,39 @@ export default function MaisClient({ planoApp }: { planoApp: string }) {
     router.refresh();
   }
 
-  const emBreve = () => alert("Disponível em breve 🚀");
+  async function salvarPerfil(e: React.FormEvent) {
+    e.preventDefault();
+    setSalvando(true);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        nome: form.nome,
+        cref: form.cref || null,
+        especialidades: form.especialidades
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      })
+      .eq("id", user!.id);
+    setSalvando(false);
+    if (error) return toast("Erro ao salvar perfil", "erro");
+    toast("Perfil atualizado ✓");
+    setModal(false);
+    router.refresh();
+  }
+
+  const emBreve = () => toast("Disponível em breve 🚀");
 
   return (
     <div className="space-y-5">
       <section>
         <h2 className="font-black text-sm mb-2 text-txt2 uppercase text-[11px]">Conta</h2>
         <Card className="!py-1">
-          <Row Icon={IconUser} label="Editar perfil" onClick={emBreve} />
+          <Row Icon={IconUser} label="Editar perfil" onClick={() => setModal(true)} />
           <Row Icon={IconCreditCard} label="Plano & assinatura" onClick={emBreve}
             right={<Badge variant="verde">{planoApp === "pro" ? "Pro" : planoApp}</Badge>} />
           <Row Icon={IconBell} label="Notificações" right={<Toggle initial />} />
@@ -72,10 +110,11 @@ export default function MaisClient({ planoApp }: { planoApp: string }) {
       <section>
         <h2 className="font-black text-sm mb-2 text-txt2 uppercase text-[11px]">Negócio</h2>
         <Card className="!py-1">
+          <Row Icon={IconMessage} label="Mensagens" onClick={() => router.push("/chat")} />
+          <Row Icon={IconChartBar} label="Financeiro & relatórios" onClick={() => router.push("/financeiro")} />
           <Row Icon={IconQrcode} label="Meu link de cadastro" onClick={emBreve} />
           <Row Icon={IconBrandWhatsapp} label="Integração WhatsApp" onClick={emBreve}
-            right={<Badge variant="verde">Ativo</Badge>} />
-          <Row Icon={IconChartBar} label="Financeiro & relatórios" onClick={() => router.push("/financeiro")} />
+            right={<Badge variant="cinza">Em breve</Badge>} />
           <Row Icon={IconDeviceMobile} label="App do aluno" onClick={emBreve} />
         </Card>
       </section>
@@ -87,6 +126,33 @@ export default function MaisClient({ planoApp }: { planoApp: string }) {
           <Row Icon={IconLogout} label="Sair da conta" danger onClick={sair} right={<span />} />
         </Card>
       </section>
+
+      {modal && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-end justify-center" onClick={() => setModal(false)}>
+          <div
+            className="bg-card border border-line rounded-t-3xl w-full max-w-[480px] p-5 space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="font-black">Editar perfil</h2>
+              <button onClick={() => setModal(false)}><IconX size={20} className="text-txt2" /></button>
+            </div>
+            <form onSubmit={salvarPerfil} className="space-y-3">
+              <input className="input" required value={form.nome}
+                onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Nome completo" />
+              <input className="input" value={form.cref}
+                onChange={(e) => setForm({ ...form, cref: e.target.value })} placeholder="CREF (ex: 123456-G/SP)" />
+              <input className="input" value={form.especialidades}
+                onChange={(e) => setForm({ ...form, especialidades: e.target.value })}
+                placeholder="Especialidades separadas por vírgula" />
+              <button disabled={salvando}
+                className="w-full bg-accent text-bg font-bold rounded-2xl py-3.5 active:scale-[0.98] transition-all duration-150 disabled:opacity-50">
+                {salvando ? "Salvando..." : "Salvar"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

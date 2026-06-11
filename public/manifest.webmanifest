@@ -1,0 +1,12 @@
+{
+  "name": "FitCoach Pro",
+  "short_name": "FitCoach",
+  "description": "Gestão completa para personal trainers",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#09090F",
+  "theme_color": "#09090F",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

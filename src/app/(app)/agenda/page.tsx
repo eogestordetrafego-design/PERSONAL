@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, Badge, Card, statusBadge } from "@/components/ui";
+import { toast } from "@/components/Toast";
 import { hora } from "@/lib/format";
 import { IconChevronLeft, IconChevronRight, IconPlus, IconX, IconCheck, IconBan } from "@tabler/icons-react";
 
@@ -28,7 +29,6 @@ function semanaDe(d: Date) {
 const mesmoDia = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 
 export default function AgendaPage() {
-  const supabase = useMemo(() => createClient(), []);
   const [ref, setRef] = useState(new Date());
   const [diaAtivo, setDiaAtivo] = useState(new Date());
   const [sessoes, setSessoes] = useState<Sessao[]>([]);
@@ -44,6 +44,7 @@ export default function AgendaPage() {
   const carregarSemana = useCallback(async () => {
     const ini = new Date(semana[0]); ini.setHours(0, 0, 0, 0);
     const fim = new Date(semana[6]); fim.setHours(23, 59, 59, 999);
+    const supabase = createClient();
     const { data } = await supabase
       .from("sessoes")
       .select("id, inicio, status, alunos(nome, cor_avatar), treinos(nome)")
@@ -54,7 +55,7 @@ export default function AgendaPage() {
     setDotsDias(new Set(all.map((s) => new Date(s.inicio).toDateString())));
     setSessoes(all);
     setLoading(false);
-  }, [semana, supabase]);
+  }, [semana]);
 
   useEffect(() => {
     setLoading(true);
@@ -62,11 +63,12 @@ export default function AgendaPage() {
   }, [carregarSemana]);
 
   useEffect(() => {
+    const supabase = createClient();
     supabase.from("alunos").select("id, nome").eq("status", "ativo").order("nome")
       .then(({ data }) => setAlunos(data ?? []));
     supabase.from("treinos").select("id, nome").order("nome")
       .then(({ data }) => setTreinos(data ?? []));
-  }, [supabase]);
+  }, []);
 
   const doDia = sessoes.filter((s) => mesmoDia(new Date(s.inicio), diaAtivo));
 
@@ -80,24 +82,31 @@ export default function AgendaPage() {
   async function criarSessao(e: React.FormEvent) {
     e.preventDefault();
     if (!form.aluno) return;
+    const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     const [h, m] = form.horaStr.split(":").map(Number);
     const inicio = new Date(diaAtivo);
     inicio.setHours(h, m, 0, 0);
-    await supabase.from("sessoes").insert({
+    const { error } = await supabase.from("sessoes").insert({
       trainer_id: user!.id,
       aluno_id: form.aluno,
       treino_id: form.treino || null,
       inicio: inicio.toISOString(),
     });
+    if (error) return toast("Erro ao agendar", "erro");
+    toast("Sessão agendada ✓");
     setModal(false);
     carregarSemana();
   }
 
   async function mudarStatus(id: string, status: string) {
-    await supabase.from("sessoes").update({ status }).eq("id", id);
+    if (status === "cancelada" && !confirm("Cancelar esta sessão?")) return;
+    const supabase = createClient();
+    const { error } = await supabase.from("sessoes").update({ status }).eq("id", id);
+    if (error) return toast("Erro ao atualizar sessão", "erro");
+    toast(status === "realizada" ? "Sessão concluída ✓" : "Sessão cancelada");
     carregarSemana();
   }
 
