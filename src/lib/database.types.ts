@@ -63,6 +63,7 @@ export type Database = {
           status: string
           telefone: string | null
           trainer_id: string
+          user_id: string | null
           valor_mensalidade: number
         }
         Insert: {
@@ -80,6 +81,7 @@ export type Database = {
           status?: string
           telefone?: string | null
           trainer_id: string
+          user_id?: string | null
           valor_mensalidade?: number
         }
         Update: {
@@ -97,6 +99,7 @@ export type Database = {
           status?: string
           telefone?: string | null
           trainer_id?: string
+          user_id?: string | null
           valor_mensalidade?: number
         }
         Relationships: [
@@ -146,6 +149,51 @@ export type Database = {
             columns: ["aluno_id"]
             isOneToOne: true
             referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      execucoes: {
+        Row: {
+          carga_kg: number | null
+          exercicio_id: string | null
+          id: string
+          nome: string
+          reps: number | null
+          series: number | null
+          treino_log_id: string
+        }
+        Insert: {
+          carga_kg?: number | null
+          exercicio_id?: string | null
+          id?: string
+          nome: string
+          reps?: number | null
+          series?: number | null
+          treino_log_id: string
+        }
+        Update: {
+          carga_kg?: number | null
+          exercicio_id?: string | null
+          id?: string
+          nome?: string
+          reps?: number | null
+          series?: number | null
+          treino_log_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execucoes_exercicio_id_fkey"
+            columns: ["exercicio_id"]
+            isOneToOne: false
+            referencedRelation: "exercicios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "execucoes_treino_log_id_fkey"
+            columns: ["treino_log_id"]
+            isOneToOne: false
+            referencedRelation: "treino_logs"
             referencedColumns: ["id"]
           },
         ]
@@ -435,6 +483,48 @@ export type Database = {
           },
           {
             foreignKeyName: "sessoes_treino_id_fkey"
+            columns: ["treino_id"]
+            isOneToOne: false
+            referencedRelation: "treinos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      treino_logs: {
+        Row: {
+          aluno_id: string
+          comentario: string | null
+          data: string
+          id: string
+          pse: number | null
+          treino_id: string | null
+        }
+        Insert: {
+          aluno_id: string
+          comentario?: string | null
+          data?: string
+          id?: string
+          pse?: number | null
+          treino_id?: string | null
+        }
+        Update: {
+          aluno_id?: string
+          comentario?: string | null
+          data?: string
+          id?: string
+          pse?: number | null
+          treino_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treino_logs_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treino_logs_treino_id_fkey"
             columns: ["treino_id"]
             isOneToOne: false
             referencedRelation: "treinos"

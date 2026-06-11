@@ -3,7 +3,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "@/components/Toast";
-import { IconPencil, IconScale, IconTrash, IconX } from "@tabler/icons-react";
+import { linkWhatsApp } from "@/lib/whatsapp";
+import { IconCopy, IconDeviceMobile, IconPencil, IconScale, IconTrash, IconX, IconBrandWhatsapp } from "@tabler/icons-react";
 
 type Aluno = {
   id: string;
@@ -14,12 +15,18 @@ type Aluno = {
   status: string;
   altura_cm: number | null;
   meta_peso_kg: number | null;
+  email: string | null;
+  telefone: string | null;
+  user_id: string | null;
 };
 
 export default function AlunoTools({ aluno }: { aluno: Aluno }) {
   const router = useRouter();
   const [modal, setModal] = useState<"medida" | "editar" | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [acesso, setAcesso] = useState<{ email: string; senha: string } | null>(null);
+  const [criandoAcesso, setCriandoAcesso] = useState(false);
+  const [temAcesso, setTemAcesso] = useState(!!aluno.user_id);
 
   // medida
   const [peso, setPeso] = useState("");
@@ -95,6 +102,29 @@ export default function AlunoTools({ aluno }: { aluno: Aluno }) {
 
   const planos: Record<string, number> = { basico: 299, pro: 499, premium: 799, vip: 1099 };
 
+  async function criarAcesso() {
+    if (criandoAcesso) return;
+    setCriandoAcesso(true);
+    const res = await fetch("/api/alunos/acesso", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ alunoId: aluno.id }),
+    });
+    const dados = await res.json();
+    setCriandoAcesso(false);
+    if (!res.ok) return toast(dados.erro ?? "Erro ao criar acesso", "erro");
+    setAcesso(dados);
+    setTemAcesso(true);
+  }
+
+  function copiarAcesso() {
+    if (!acesso) return;
+    navigator.clipboard.writeText(
+      `Seu acesso ao FitCoach Pro 💪\n${location.origin}\nE-mail: ${acesso.email}\nSenha: ${acesso.senha}`
+    );
+    toast("Dados copiados ✓");
+  }
+
   return (
     <>
       <div className="flex gap-2 justify-center">
@@ -110,7 +140,62 @@ export default function AlunoTools({ aluno }: { aluno: Aluno }) {
         >
           <IconPencil size={15} /> Editar
         </button>
+        {!temAcesso ? (
+          <button
+            onClick={criarAcesso}
+            disabled={criandoAcesso}
+            className="flex items-center gap-1.5 text-xs font-bold bg-accent2/15 text-accent2 rounded-full px-4 py-2 active:scale-95 transition-all duration-150 disabled:opacity-50"
+          >
+            <IconDeviceMobile size={15} /> {criandoAcesso ? "Criando..." : "Criar acesso"}
+          </button>
+        ) : (
+          <span className="flex items-center gap-1.5 text-xs font-bold text-accent2 px-2 py-2">
+            <IconDeviceMobile size={15} /> App ativo
+          </span>
+        )}
       </div>
+
+      {acesso && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-end justify-center" onClick={() => setAcesso(null)}>
+          <div
+            className="bg-card border border-line rounded-t-3xl w-full max-w-[480px] p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="font-black">Acesso criado ✓</h2>
+              <button onClick={() => setAcesso(null)}><IconX size={20} className="text-txt2" /></button>
+            </div>
+            <p className="text-txt2 text-sm">
+              Envie estes dados para o aluno. A senha é temporária — oriente a trocar em &quot;Esqueceu a senha?&quot; se quiser.
+            </p>
+            <div className="bg-bg border border-line rounded-2xl p-4 text-sm space-y-1">
+              <p><span className="text-txt2">E-mail:</span> <b>{acesso.email}</b></p>
+              <p><span className="text-txt2">Senha:</span> <b className="font-mono">{acesso.senha}</b></p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={copiarAcesso}
+                className="flex-1 border border-line rounded-2xl py-3 text-sm font-bold flex items-center justify-center gap-2"
+              >
+                <IconCopy size={16} /> Copiar
+              </button>
+              {aluno.telefone && (
+                <a
+                  href={linkWhatsApp(
+                    aluno.telefone,
+                    `Seu acesso ao FitCoach Pro 💪\n${typeof location !== "undefined" ? location.origin : ""}\nE-mail: ${acesso.email}\nSenha: ${acesso.senha}`
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 bg-[#25D366] text-bg rounded-2xl py-3 text-sm font-bold flex items-center justify-center gap-2"
+                >
+                  <IconBrandWhatsapp size={16} /> WhatsApp
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {modal && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-end justify-center" onClick={() => setModal(null)}>

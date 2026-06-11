@@ -114,6 +114,9 @@ export default async function AlunoPage({ params }: { params: { id: string } }) 
           status: aluno.status,
           altura_cm: aluno.altura_cm,
           meta_peso_kg: aluno.meta_peso_kg ? Number(aluno.meta_peso_kg) : null,
+          email: aluno.email,
+          telefone: aluno.telefone,
+          user_id: aluno.user_id,
         }}
       />
 
