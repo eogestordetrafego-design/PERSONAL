@@ -3,8 +3,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Badge, Card } from "@/components/ui";
-import { Toggle } from "@/components/ui/client";
 import { toast } from "@/components/Toast";
+import PushToggle from "./PushToggle";
 import {
   IconUser,
   IconCreditCard,
@@ -141,7 +141,7 @@ export default function MaisClient({ planoApp, perfil }: { planoApp: string; per
           <Row Icon={IconUser} label="Editar perfil" onClick={() => setModal(true)} />
           <Row Icon={IconCreditCard} label="Plano & assinatura" onClick={emBreve}
             right={<Badge variant="verde">{planoApp === "pro" ? "Pro" : planoApp}</Badge>} />
-          <Row Icon={IconBell} label="Notificações" right={<Toggle initial />} />
+          <Row Icon={IconBell} label="Notificações" right={<PushToggle />} />
         </Card>
       </section>
 
