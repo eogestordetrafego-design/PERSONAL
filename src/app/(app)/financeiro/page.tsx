@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Avatar, Badge, Card } from "@/components/ui";
 import { brlFull } from "@/lib/format";
 import FinanceiroAcoes from "./FinanceiroAcoes";
-import { IconArrowLeft, IconDownload } from "@tabler/icons-react";
+import GerarCobrancas from "./GerarCobrancas";
+import { IconArrowLeft } from "@tabler/icons-react";
 
 export const dynamic = "force-dynamic";
 
@@ -54,9 +55,7 @@ export default async function FinanceiroPage() {
           </Link>
           <h1 className="font-black">Financeiro</h1>
         </div>
-        <button className="w-10 h-10 rounded-2xl bg-card border border-line flex items-center justify-center text-txt2">
-          <IconDownload size={18} />
-        </button>
+        <GerarCobrancas />
       </header>
 
       <div className="rounded-card p-5 bg-accent text-bg">

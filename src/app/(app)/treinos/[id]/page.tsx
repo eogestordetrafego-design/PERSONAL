@@ -9,13 +9,14 @@ import { toast } from "@/components/Toast";
 import {
   IconArrowLeft,
   IconBarbell,
+  IconCopy,
   IconPlus,
   IconTrash,
   IconArrowUp,
   IconArrowDown,
 } from "@tabler/icons-react";
 
-type Ex = { key: string; nome: string; series: number; reps: number; carga: number };
+type Ex = { key: string; nome: string; series: number; reps: number; carga: number; video: string };
 let seq = 0;
 const uid = () => `k-${++seq}`;
 
@@ -36,7 +37,7 @@ export default function EditarTreinoPage() {
     const supabase = createClient();
     supabase
       .from("treinos")
-      .select("nome, categoria, nivel, duracao_min, observacoes, exercicios(nome, series, reps, carga_kg, ordem)")
+      .select("nome, categoria, nivel, duracao_min, observacoes, exercicios(nome, series, reps, carga_kg, ordem, video_url)")
       .eq("id", params.id)
       .single()
       .then(({ data }) => {
@@ -53,7 +54,7 @@ export default function EditarTreinoPage() {
         setExs(
           ((data.exercicios as any[]) ?? [])
             .sort((a, b) => a.ordem - b.ordem)
-            .map((e) => ({ key: uid(), nome: e.nome, series: e.series, reps: e.reps, carga: Number(e.carga_kg) }))
+            .map((e) => ({ key: uid(), nome: e.nome, series: e.series, reps: e.reps, carga: Number(e.carga_kg), video: e.video_url ?? "" }))
         );
         setCarregando(false);
       });
@@ -69,7 +70,7 @@ export default function EditarTreinoPage() {
 
   function addEx() {
     if (!novoEx.trim()) return;
-    setExs([...exs, { key: uid(), nome: novoEx.trim(), series: 3, reps: 12, carga: 0 }]);
+    setExs([...exs, { key: uid(), nome: novoEx.trim(), series: 3, reps: 12, carga: 0, video: "" }]);
     setNovoEx("");
   }
 
@@ -94,12 +95,40 @@ export default function EditarTreinoPage() {
         series: e.series,
         reps: e.reps,
         carga_kg: e.carga,
+        video_url: e.video.trim() || null,
       }))
     );
     setSalvando(false);
     if (e2) return toast("Erro ao salvar exercícios", "erro");
     toast("Treino atualizado ✓");
     router.push("/treinos");
+    router.refresh();
+  }
+
+  async function duplicar() {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const { data: novo, error } = await supabase
+      .from("treinos")
+      .insert({ trainer_id: user!.id, nome: `${nome} (cópia)`, categoria, nivel, duracao_min: duracao, observacoes: obs })
+      .select("id")
+      .single();
+    if (error || !novo) return toast("Erro ao duplicar", "erro");
+    await supabase.from("exercicios").insert(
+      exs.map((e, i) => ({
+        treino_id: novo.id,
+        ordem: i + 1,
+        nome: e.nome,
+        series: e.series,
+        reps: e.reps,
+        carga_kg: e.carga,
+        video_url: e.video.trim() || null,
+      }))
+    );
+    toast("Treino duplicado ✓");
+    router.push(`/treinos/${novo.id}`);
     router.refresh();
   }
 
@@ -193,6 +222,12 @@ export default function EditarTreinoPage() {
                 <Counter label="Carga" initial={ex.carga} step={2.5} suffix="kg"
                   onChange={(v) => setExs((cur) => cur.map((e) => (e.key === ex.key ? { ...e, carga: v } : e)))} />
               </div>
+              <input
+                className="input mt-3 !py-2.5 text-xs"
+                placeholder="🎥 Link do vídeo demonstrativo (opcional)"
+                value={ex.video}
+                onChange={(e) => setExs((cur) => cur.map((x) => (x.key === ex.key ? { ...x, video: e.target.value } : x)))}
+              />
             </div>
           ))}
 
@@ -221,6 +256,9 @@ export default function EditarTreinoPage() {
         placeholder="Observações"
       />
 
+      <button onClick={duplicar} className="w-full flex items-center justify-center gap-2 text-accent2 text-sm font-bold py-2 border border-line rounded-2xl">
+        <IconCopy size={16} /> Duplicar treino
+      </button>
       <button onClick={excluir} className="w-full flex items-center justify-center gap-2 text-danger text-sm font-bold py-2">
         <IconTrash size={16} /> Excluir treino
       </button>

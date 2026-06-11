@@ -15,7 +15,7 @@ import {
   IconArrowDown,
 } from "@tabler/icons-react";
 
-type Ex = { id: string; nome: string; series: number; reps: number; carga: number };
+type Ex = { id: string; nome: string; series: number; reps: number; carga: number; video: string };
 let seq = 2;
 const uid = () => `ex-${++seq}`;
 
@@ -29,8 +29,8 @@ export default function BuilderPage() {
   const [alunos, setAlunos] = useState<{ id: string; nome: string }[]>([]);
   const [obs, setObs] = useState("Manter descanso de 60s entre séries. Ajustar carga conforme evolução.");
   const [exs, setExs] = useState<Ex[]>([
-    { id: "ex-1", nome: "Agachamento livre", series: 4, reps: 12, carga: 20 },
-    { id: "ex-2", nome: "Supino reto", series: 4, reps: 10, carga: 40 },
+    { id: "ex-1", nome: "Agachamento livre", series: 4, reps: 12, carga: 20, video: "" },
+    { id: "ex-2", nome: "Supino reto", series: 4, reps: 10, carga: 40, video: "" },
   ]);
   const [novoEx, setNovoEx] = useState("");
   const [salvando, setSalvando] = useState(false);
@@ -55,7 +55,7 @@ export default function BuilderPage() {
 
   function addEx() {
     if (!novoEx.trim()) return;
-    setExs([...exs, { id: uid(), nome: novoEx.trim(), series: 3, reps: 12, carga: 0 }]);
+    setExs([...exs, { id: uid(), nome: novoEx.trim(), series: 3, reps: 12, carga: 0, video: "" }]);
     setNovoEx("");
   }
 
@@ -84,6 +84,7 @@ export default function BuilderPage() {
         series: e.series,
         reps: e.reps,
         carga_kg: e.carga,
+        video_url: e.video.trim() || null,
       }))
     );
     if (!e2 && alunoId) {
@@ -176,6 +177,12 @@ export default function BuilderPage() {
                 <Counter label="Carga" initial={ex.carga} step={2.5} suffix="kg"
                   onChange={(v) => setExs(exs.map((e, j) => (j === i ? { ...e, carga: v } : e)))} />
               </div>
+              <input
+                className="input mt-3 !py-2.5 text-xs"
+                placeholder="🎥 Link do vídeo demonstrativo (opcional)"
+                value={ex.video}
+                onChange={(e) => setExs((cur) => cur.map((x) => (x.id === ex.id ? { ...x, video: e.target.value } : x)))}
+              />
             </div>
           ))}
 

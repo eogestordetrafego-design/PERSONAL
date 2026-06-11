@@ -21,9 +21,18 @@ export default async function MaisPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-center text-center pt-2">
-        <div className="w-24 h-24 rounded-full bg-accent/15 text-accent flex items-center justify-center text-3xl font-black">
-          {iniciais(profile?.nome ?? "?")}
-        </div>
+        {profile?.avatar_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={profile.avatar_url}
+            alt={profile?.nome ?? "Avatar"}
+            className="w-24 h-24 rounded-full object-cover border-2 border-accent/40"
+          />
+        ) : (
+          <div className="w-24 h-24 rounded-full bg-accent/15 text-accent flex items-center justify-center text-3xl font-black">
+            {iniciais(profile?.nome ?? "?")}
+          </div>
+        )}
         <h1 className="text-xl font-black mt-3">{profile?.nome}</h1>
         {profile?.cref && <p className="text-txt2 text-xs mt-1">CREF {profile.cref}</p>}
         <div className="flex gap-2 mt-3 flex-wrap justify-center">

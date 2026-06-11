@@ -25,7 +25,7 @@ export default function BottomNav() {
       : pathname.startsWith(href);
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 bg-bg/95 backdrop-blur border-t border-line">
+    <nav className="fixed bottom-0 inset-x-0 z-40 bg-bg/95 backdrop-blur border-t border-line print:hidden">
       <div className="max-w-[480px] mx-auto flex justify-around py-2 pb-[max(8px,env(safe-area-inset-bottom))]">
         {tabs.map(({ href, label, Icon }) => {
           const active = isActive(href);

@@ -37,7 +37,7 @@ export default function AgendaPage() {
   const [modal, setModal] = useState(false);
   const [alunos, setAlunos] = useState<{ id: string; nome: string }[]>([]);
   const [treinos, setTreinos] = useState<{ id: string; nome: string }[]>([]);
-  const [form, setForm] = useState({ aluno: "", treino: "", horaStr: "08:00" });
+  const [form, setForm] = useState({ aluno: "", treino: "", horaStr: "08:00", repetir: 0 });
 
   const semana = useMemo(() => semanaDe(ref), [ref]);
 
@@ -89,14 +89,19 @@ export default function AgendaPage() {
     const [h, m] = form.horaStr.split(":").map(Number);
     const inicio = new Date(diaAtivo);
     inicio.setHours(h, m, 0, 0);
-    const { error } = await supabase.from("sessoes").insert({
-      trainer_id: user!.id,
-      aluno_id: form.aluno,
-      treino_id: form.treino || null,
-      inicio: inicio.toISOString(),
+    const ocorrencias = Array.from({ length: 1 + form.repetir }, (_, i) => {
+      const d = new Date(inicio);
+      d.setDate(inicio.getDate() + i * 7);
+      return {
+        trainer_id: user!.id,
+        aluno_id: form.aluno,
+        treino_id: form.treino || null,
+        inicio: d.toISOString(),
+      };
     });
+    const { error } = await supabase.from("sessoes").insert(ocorrencias);
     if (error) return toast("Erro ao agendar", "erro");
-    toast("Sessão agendada ✓");
+    toast(form.repetir > 0 ? `${ocorrencias.length} sessões agendadas ✓` : "Sessão agendada ✓");
     setModal(false);
     carregarSemana();
   }
@@ -237,6 +242,12 @@ export default function AgendaPage() {
                 {treinos.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
               </select>
               <input className="input" type="time" value={form.horaStr} onChange={(e) => setForm({ ...form, horaStr: e.target.value })} />
+              <select className="input" value={form.repetir} onChange={(e) => setForm({ ...form, repetir: Number(e.target.value) })}>
+                <option value={0}>Não repetir</option>
+                <option value={3}>Repetir semanalmente — 4 semanas</option>
+                <option value={7}>Repetir semanalmente — 8 semanas</option>
+                <option value={11}>Repetir semanalmente — 12 semanas</option>
+              </select>
               <button className="w-full bg-accent text-bg font-bold rounded-2xl py-3.5 active:scale-[0.98] transition-all duration-150">
                 Agendar
               </button>

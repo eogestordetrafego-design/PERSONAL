@@ -21,7 +21,9 @@ export default function ChatListaPage() {
 
   useEffect(() => {
     const supabase = createClient();
+    let ativo = true;
     async function carregar() {
+      if (!ativo) return;
       const [{ data: alunos }, { data: msgs }] = await Promise.all([
         supabase.from("alunos").select("id, nome, cor_avatar").neq("status", "inativo").order("nome"),
         supabase
@@ -64,6 +66,16 @@ export default function ChatListaPage() {
       setLoading(false);
     }
     carregar();
+
+    const canal = supabase
+      .channel("chat-lista")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "mensagens" }, () => carregar())
+      .subscribe();
+
+    return () => {
+      ativo = false;
+      supabase.removeChannel(canal);
+    };
   }, []);
 
   const filtradas = useMemo(

@@ -9,7 +9,6 @@ import {
   IconUser,
   IconCreditCard,
   IconBell,
-  IconMoon,
   IconMessage,
   IconQrcode,
   IconBrandWhatsapp,
@@ -54,6 +53,7 @@ export default function MaisClient({ planoApp, perfil }: { planoApp: string; per
   const router = useRouter();
   const [modal, setModal] = useState(false);
   const [salvando, setSalvando] = useState(false);
+  const [enviandoFoto, setEnviandoFoto] = useState(false);
   const [form, setForm] = useState({
     nome: perfil.nome,
     cref: perfil.cref,
@@ -94,6 +94,45 @@ export default function MaisClient({ planoApp, perfil }: { planoApp: string; per
 
   const emBreve = () => toast("Disponível em breve 🚀");
 
+  async function copiarLink() {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const url = `${location.origin}/cadastro/${user!.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast("Link copiado! Compartilhe com novos alunos ✓");
+    } catch {
+      prompt("Copie seu link de cadastro:", url);
+    }
+  }
+
+  async function enviarFoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setEnviandoFoto(true);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `${user!.id}/avatar.${ext}`;
+    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (error) {
+      setEnviandoFoto(false);
+      return toast("Erro ao enviar foto", "erro");
+    }
+    const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+    await supabase
+      .from("profiles")
+      .update({ avatar_url: `${pub.publicUrl}?v=${Date.now()}` })
+      .eq("id", user!.id);
+    setEnviandoFoto(false);
+    toast("Foto atualizada ✓");
+    router.refresh();
+  }
+
   return (
     <div className="space-y-5">
       <section>
@@ -103,7 +142,6 @@ export default function MaisClient({ planoApp, perfil }: { planoApp: string; per
           <Row Icon={IconCreditCard} label="Plano & assinatura" onClick={emBreve}
             right={<Badge variant="verde">{planoApp === "pro" ? "Pro" : planoApp}</Badge>} />
           <Row Icon={IconBell} label="Notificações" right={<Toggle initial />} />
-          <Row Icon={IconMoon} label="Modo escuro" right={<Toggle initial />} />
         </Card>
       </section>
 
@@ -112,7 +150,8 @@ export default function MaisClient({ planoApp, perfil }: { planoApp: string; per
         <Card className="!py-1">
           <Row Icon={IconMessage} label="Mensagens" onClick={() => router.push("/chat")} />
           <Row Icon={IconChartBar} label="Financeiro & relatórios" onClick={() => router.push("/financeiro")} />
-          <Row Icon={IconQrcode} label="Meu link de cadastro" onClick={emBreve} />
+          <Row Icon={IconQrcode} label="Meu link de cadastro" onClick={copiarLink}
+            right={<Badge variant="verde">Copiar</Badge>} />
           <Row Icon={IconBrandWhatsapp} label="Integração WhatsApp" onClick={emBreve}
             right={<Badge variant="cinza">Em breve</Badge>} />
           <Row Icon={IconDeviceMobile} label="App do aluno" onClick={emBreve} />
@@ -137,6 +176,11 @@ export default function MaisClient({ planoApp, perfil }: { planoApp: string; per
               <h2 className="font-black">Editar perfil</h2>
               <button onClick={() => setModal(false)}><IconX size={20} className="text-txt2" /></button>
             </div>
+            <label className="block">
+              <span className="text-[11px] text-txt2 font-bold uppercase">Foto de perfil</span>
+              <input type="file" accept="image/*" onChange={enviarFoto} disabled={enviandoFoto}
+                className="block w-full text-xs text-txt2 mt-1 file:mr-3 file:rounded-xl file:border-0 file:bg-accent/15 file:text-accent file:font-bold file:px-3 file:py-2" />
+            </label>
             <form onSubmit={salvarPerfil} className="space-y-3">
               <input className="input" required value={form.nome}
                 onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Nome completo" />

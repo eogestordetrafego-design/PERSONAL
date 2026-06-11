@@ -5,6 +5,7 @@ import { Avatar, Badge, Card, ProgressBar, categoriaInfo, planoLabel, statusBadg
 import { brl, hora, idade } from "@/lib/format";
 import WeightChart from "./WeightChart";
 import AlunoTools from "./AlunoTools";
+import Anamnese from "./Anamnese";
 import {
   IconArrowLeft,
   IconBarbell,
@@ -29,11 +30,17 @@ export default async function AlunoPage({ params }: { params: { id: string } }) 
         .limit(3),
       supabase
         .from("aluno_treinos")
-        .select("treinos(id, nome, categoria, exercicios(nome, series, reps, carga_kg, ordem))")
+        .select("treinos(id, nome, categoria, exercicios(nome, series, reps, carga_kg, ordem, video_url))")
         .eq("aluno_id", params.id)
         .limit(1)
         .maybeSingle(),
     ]);
+
+  const { data: anamnese } = await supabase
+    .from("anamneses")
+    .select("lesoes, historico_saude, medicamentos, nivel_atividade, objetivo_detalhado, observacoes")
+    .eq("aluno_id", params.id)
+    .maybeSingle();
 
   if (!aluno) notFound();
 
@@ -157,11 +164,23 @@ export default async function AlunoPage({ params }: { params: { id: string } }) 
                     {ex.series}×{ex.reps}{Number(ex.carga_kg) > 0 ? ` · ${ex.carga_kg}kg` : ""}
                   </p>
                 </div>
+                {ex.video_url && (
+                  <a
+                    href={ex.video_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-bold text-accent2"
+                  >
+                    ▶ vídeo
+                  </a>
+                )}
               </div>
             ))}
           </Card>
         </section>
       )}
+
+      <Anamnese alunoId={params.id} dados={anamnese as any} />
 
       <section>
         <h3 className="font-black text-sm mb-2">Últimas sessões</h3>
@@ -200,6 +219,13 @@ export default async function AlunoPage({ params }: { params: { id: string } }) 
           <IconCalendarPlus size={18} /> Agendar
         </Link>
       </div>
+
+      <Link
+        href={`/alunos/${aluno.id}/relatorio`}
+        className="block text-center text-sm font-bold text-accent2 py-1"
+      >
+        📄 Relatório de evolução
+      </Link>
     </div>
   );
 }
