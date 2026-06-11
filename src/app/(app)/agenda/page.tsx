@@ -64,7 +64,7 @@ export default function AgendaPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.from("alunos").select("id, nome").eq("status", "ativo").order("nome")
+    supabase.from("alunos").select("id, nome").neq("status", "inativo").order("nome")
       .then(({ data }) => setAlunos(data ?? []));
     supabase.from("treinos").select("id, nome").order("nome")
       .then(({ data }) => setTreinos(data ?? []));
