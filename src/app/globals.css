@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: #09090f;
+  color: #f0f0f8;
+}
+
+::-webkit-scrollbar { width: 0; height: 0; }
+
+@layer components {
+  .input {
+    @apply w-full bg-card border border-line rounded-2xl px-4 py-3.5 text-sm text-txt outline-none transition-all duration-150 focus:border-accent placeholder:text-txt2;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.pulse-dot { animation: pulse-dot 1.5s ease-in-out infinite; }

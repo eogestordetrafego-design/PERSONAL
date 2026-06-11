@@ -1,0 +1,147 @@
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { Avatar, Badge, Card, ProgressBar, StatBox, statusBadge } from "@/components/ui";
+import { brl, dataLonga, hora, saudacao } from "@/lib/format";
+import { IconBell } from "@tabler/icons-react";
+
+export const dynamic = "force-dynamic";
+
+export default async function Dashboard() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const hoje = new Date();
+  const ini = new Date(hoje); ini.setHours(0, 0, 0, 0);
+  const fim = new Date(hoje); fim.setHours(23, 59, 59, 999);
+
+  const [{ data: profile }, { data: sessoes }, { data: ativos }] = await Promise.all([
+    supabase.from("profiles").select("nome").eq("id", user!.id).single(),
+    supabase
+      .from("sessoes")
+      .select("id, inicio, status, alunos(nome, cor_avatar), treinos(nome, categoria)")
+      .gte("inicio", ini.toISOString())
+      .lte("inicio", fim.toISOString())
+      .order("inicio"),
+    supabase.from("alunos").select("id, nome, cor_avatar, meta_peso_kg, objetivo, valor_mensalidade, status").eq("status", "ativo"),
+  ]);
+
+  const receita = (ativos ?? []).reduce((s, a) => s + Number(a.valor_mensalidade), 0);
+  const primeiroNome = (profile?.nome ?? "Coach").split(" ")[0];
+  const proxima = (sessoes ?? []).find(
+    (s) => new Date(s.inicio) > new Date() && s.status !== "cancelada"
+  );
+
+  // progresso: alunos com meta + medidas
+  const comMeta = (ativos ?? []).filter((a) => a.meta_peso_kg).slice(0, 3);
+  const progresso = await Promise.all(
+    comMeta.map(async (a) => {
+      const { data: med } = await supabase
+        .from("medidas")
+        .select("peso_kg")
+        .eq("aluno_id", a.id)
+        .order("data");
+      if (!med || med.length < 1) return { ...a, pct: 0 };
+      const inicial = Number(med[0].peso_kg);
+      const atual = Number(med[med.length - 1].peso_kg);
+      const meta = Number(a.meta_peso_kg);
+      const total = Math.abs(inicial - meta) || 1;
+      const feito = Math.abs(inicial - atual);
+      return { ...a, pct: Math.round(Math.min(100, (feito / total) * 100)) };
+    })
+  );
+
+  const cores = ["#00D68F", "#7B6EF6", "#FFB020"];
+  const sess = sessoes ?? [];
+
+  return (
+    <div className="space-y-6">
+      <header className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-black">
+            {saudacao()}, {primeiroNome} 👋
+          </h1>
+          <p className="text-txt2 text-xs capitalize mt-0.5">{dataLonga(hoje)}</p>
+        </div>
+        <button className="relative w-10 h-10 rounded-2xl bg-card border border-line flex items-center justify-center">
+          <IconBell size={20} className="text-txt2" />
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-danger text-[9px] font-black flex items-center justify-center">
+            3
+          </span>
+        </button>
+      </header>
+
+      <div className="flex gap-3 overflow-x-auto -mx-4 px-4">
+        <StatBox valor={String(sess.length)} label="Aulas hoje" />
+        <StatBox valor={String((ativos ?? []).length)} label="Alunos ativos" />
+        <StatBox valor={brl(receita)} label={`Receita ${hoje.toLocaleDateString("pt-BR", { month: "long" })}`} delta="+12% vs mês anterior" />
+      </div>
+
+      {proxima && (
+        <div className="rounded-card p-4 bg-accent text-bg">
+          <p className="text-[11px] font-bold uppercase opacity-70">Próxima sessão</p>
+          <div className="flex items-center gap-3 mt-2">
+            <Avatar nome={(proxima.alunos as any)?.nome ?? "?"} cor="#09090F" size="lg" />
+            <div className="flex-1">
+              <p className="font-black text-base">{(proxima.alunos as any)?.nome}</p>
+              <p className="text-xs font-bold opacity-70">{(proxima.treinos as any)?.nome ?? "Treino"}</p>
+            </div>
+            <p className="text-2xl font-black">{hora(proxima.inicio)}</p>
+          </div>
+        </div>
+      )}
+
+      <section>
+        <h2 className="font-black text-sm mb-3">Sessões de hoje</h2>
+        {sess.length === 0 && (
+          <Card><p className="text-txt2 text-sm text-center py-4">Nenhuma sessão hoje 🎉</p></Card>
+        )}
+        <div className="space-y-2.5">
+          {sess.map((s) => {
+            const st = statusBadge[s.status];
+            return (
+              <Card key={s.id} className="flex items-center gap-3">
+                <div className="bg-accent/10 text-accent rounded-xl px-2.5 py-2 text-xs font-black">
+                  {hora(s.inicio)}
+                </div>
+                <Avatar nome={(s.alunos as any)?.nome ?? "?"} cor={(s.alunos as any)?.cor_avatar ?? "#00D68F"} size="sm" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold truncate">{(s.alunos as any)?.nome}</p>
+                  <p className="text-[11px] text-txt2 truncate">{(s.treinos as any)?.nome ?? "Treino"}</p>
+                </div>
+                <Badge variant={st.variant}>{st.label}</Badge>
+              </Card>
+            );
+          })}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="font-black text-sm mb-3">Progresso dos alunos</h2>
+        <Card className="space-y-4">
+          {progresso.length === 0 && (
+            <p className="text-txt2 text-sm text-center py-2">Cadastre metas de peso para acompanhar.</p>
+          )}
+          {progresso.map((a, i) => (
+            <Link key={a.id} href={`/alunos/${a.id}`} className="block">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-2">
+                  <Avatar nome={a.nome} cor={a.cor_avatar} size="sm" />
+                  <div>
+                    <p className="text-sm font-bold">{a.nome}</p>
+                    <p className="text-[11px] text-txt2">{a.objetivo}</p>
+                  </div>
+                </div>
+                <span className="text-sm font-black" style={{ color: cores[i % 3] }}>
+                  {a.pct}%
+                </span>
+              </div>
+              <ProgressBar value={a.pct} cor={cores[i % 3]} />
+            </Link>
+          ))}
+        </Card>
+      </section>
+    </div>
+  );
+}
