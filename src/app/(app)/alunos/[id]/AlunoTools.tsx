@@ -39,11 +39,12 @@ export default function AlunoTools({ aluno }: { aluno: Aluno }) {
   async function salvarMedida(e: React.FormEvent) {
     e.preventDefault();
     const p = parseFloat(peso.replace(",", "."));
-    if (!p || p <= 0) return toast("Informe um peso válido", "erro");
+    if (!p || p < 20 || p > 400) return toast("Informe um peso entre 20 e 400 kg", "erro");
+    const g = gordura ? parseFloat(gordura.replace(",", ".")) : null;
+    if (g !== null && (isNaN(g) || g < 1 || g > 70)) return toast("% de gordura deve ficar entre 1 e 70", "erro");
     setSalvando(true);
     const supabase = createClient();
     const imc = aluno.altura_cm ? +(p / Math.pow(aluno.altura_cm / 100, 2)).toFixed(1) : null;
-    const g = gordura ? parseFloat(gordura.replace(",", ".")) : null;
     const { error } = await supabase.from("medidas").insert({
       aluno_id: aluno.id,
       peso_kg: p,

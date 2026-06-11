@@ -52,7 +52,7 @@ export default function EditarTreinoPage() {
         setDuracao(data.duracao_min);
         setObs(data.observacoes ?? "");
         setExs(
-          ((data.exercicios as any[]) ?? [])
+          [...(data.exercicios ?? [])]
             .sort((a, b) => a.ordem - b.ordem)
             .map((e) => ({ key: uid(), nome: e.nome, series: e.series, reps: e.reps, carga: Number(e.carga_kg), video: e.video_url ?? "" }))
         );

@@ -10,7 +10,7 @@ export type AnamneseData = {
   lesoes: string | null;
   historico_saude: string | null;
   medicamentos: string | null;
-  nivel_atividade: string;
+  nivel_atividade: string | null;
   objetivo_detalhado: string | null;
   observacoes: string | null;
 } | null;
@@ -61,7 +61,7 @@ export default function Anamnese({ alunoId, dados }: { alunoId: string; dados: A
     { label: "Lesões / limitações", valor: dados?.lesoes },
     { label: "Histórico de saúde", valor: dados?.historico_saude },
     { label: "Medicamentos", valor: dados?.medicamentos },
-    { label: "Nível de atividade", valor: dados ? NIVEIS[dados.nivel_atividade] : null },
+    { label: "Nível de atividade", valor: dados ? NIVEIS[dados.nivel_atividade ?? "sedentario"] : null },
     { label: "Objetivo detalhado", valor: dados?.objetivo_detalhado },
   ].filter((i) => i.valor);
 

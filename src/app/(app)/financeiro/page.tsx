@@ -4,7 +4,8 @@ import { Avatar, Badge, Card } from "@/components/ui";
 import { brlFull } from "@/lib/format";
 import FinanceiroAcoes from "./FinanceiroAcoes";
 import GerarCobrancas from "./GerarCobrancas";
-import { IconArrowLeft } from "@tabler/icons-react";
+import { linkWhatsApp, msgCobranca } from "@/lib/whatsapp";
+import { IconArrowLeft, IconBrandWhatsapp } from "@tabler/icons-react";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export default async function FinanceiroPage() {
       .order("pago_em", { ascending: false }),
     supabase
       .from("pagamentos")
-      .select("id, valor, vencimento, status, alunos(nome, cor_avatar)")
+      .select("id, valor, vencimento, status, alunos(nome, cor_avatar, telefone)")
       .in("status", ["pendente", "atrasado"])
       .order("vencimento"),
     supabase.from("alunos").select("*", { count: "exact", head: true }).eq("status", "ativo"),
@@ -100,9 +101,9 @@ export default async function FinanceiroPage() {
             const hojeVence = venc === hojeStr;
             return (
               <Card key={p.id} className="flex items-center gap-3">
-                <Avatar nome={(p.alunos as any)?.nome ?? "?"} cor={(p.alunos as any)?.cor_avatar ?? "#8888A0"} size="sm" />
+                <Avatar nome={p.alunos?.nome ?? "?"} cor={p.alunos?.cor_avatar ?? "#8888A0"} size="sm" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate">{(p.alunos as any)?.nome}</p>
+                  <p className="text-sm font-bold truncate">{p.alunos?.nome}</p>
                   <p className="text-[11px] text-txt2">
                     Vence {new Date(venc + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })} · {brlFull(Number(p.valor))}
                   </p>
@@ -113,6 +114,24 @@ export default async function FinanceiroPage() {
                   <Badge variant="amarelo">Vence hoje</Badge>
                 ) : (
                   <Badge variant="cinza">Pendente</Badge>
+                )}
+                {p.alunos?.telefone && (
+                  <a
+                    href={linkWhatsApp(
+                      p.alunos.telefone,
+                      msgCobranca(
+                        p.alunos.nome,
+                        brlFull(Number(p.valor)),
+                        new Date(venc + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+                      )
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Cobrar pelo WhatsApp"
+                    className="w-8 h-8 rounded-xl bg-[#25D366]/15 text-[#25D366] flex items-center justify-center active:scale-90 transition-all duration-150"
+                  >
+                    <IconBrandWhatsapp size={16} />
+                  </a>
                 )}
                 <FinanceiroAcoes id={p.id} />
               </Card>
@@ -129,9 +148,9 @@ export default async function FinanceiroPage() {
         <div className="space-y-2">
           {recentes.map((p) => (
             <Card key={p.id} className="flex items-center gap-3">
-              <Avatar nome={(p.alunos as any)?.nome ?? "?"} cor={(p.alunos as any)?.cor_avatar ?? "#00D68F"} size="sm" />
+              <Avatar nome={p.alunos?.nome ?? "?"} cor={p.alunos?.cor_avatar ?? "#00D68F"} size="sm" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold truncate">{(p.alunos as any)?.nome}</p>
+                <p className="text-sm font-bold truncate">{p.alunos?.nome}</p>
                 <p className="text-[11px] text-txt2">
                   {p.pago_em && new Date(p.pago_em + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })} · {p.metodo ?? "—"}
                 </p>

@@ -10,5 +10,5 @@ export default async function TreinosPage() {
     .select("id, nome, categoria, nivel, duracao_min, exercicios(nome, ordem), aluno_treinos(aluno_id)")
     .order("criado_em", { ascending: false });
 
-  return <TreinosList treinos={(treinos as any) ?? []} />;
+  return <TreinosList treinos={treinos ?? []} />;
 }

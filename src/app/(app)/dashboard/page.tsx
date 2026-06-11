@@ -126,10 +126,10 @@ export default async function Dashboard() {
         <div className="rounded-card p-4 bg-accent text-bg">
           <p className="text-[11px] font-bold uppercase opacity-70">Próxima sessão</p>
           <div className="flex items-center gap-3 mt-2">
-            <Avatar nome={(proxima.alunos as any)?.nome ?? "?"} cor="#09090F" size="lg" />
+            <Avatar nome={proxima.alunos?.nome ?? "?"} cor="#09090F" size="lg" />
             <div className="flex-1">
-              <p className="font-black text-base">{(proxima.alunos as any)?.nome}</p>
-              <p className="text-xs font-bold opacity-70">{(proxima.treinos as any)?.nome ?? "Treino"}</p>
+              <p className="font-black text-base">{proxima.alunos?.nome}</p>
+              <p className="text-xs font-bold opacity-70">{proxima.treinos?.nome ?? "Treino"}</p>
             </div>
             <p className="text-2xl font-black">{hora(proxima.inicio)}</p>
           </div>
@@ -149,10 +149,10 @@ export default async function Dashboard() {
                 <div className="bg-accent/10 text-accent rounded-xl px-2.5 py-2 text-xs font-black">
                   {hora(s.inicio)}
                 </div>
-                <Avatar nome={(s.alunos as any)?.nome ?? "?"} cor={(s.alunos as any)?.cor_avatar ?? "#00D68F"} size="sm" />
+                <Avatar nome={s.alunos?.nome ?? "?"} cor={s.alunos?.cor_avatar ?? "#00D68F"} size="sm" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate">{(s.alunos as any)?.nome}</p>
-                  <p className="text-[11px] text-txt2 truncate">{(s.treinos as any)?.nome ?? "Treino"}</p>
+                  <p className="text-sm font-bold truncate">{s.alunos?.nome}</p>
+                  <p className="text-[11px] text-txt2 truncate">{s.treinos?.nome ?? "Treino"}</p>
                 </div>
                 <Badge variant={st.variant}>{st.label}</Badge>
               </Card>

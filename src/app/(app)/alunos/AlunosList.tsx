@@ -24,7 +24,8 @@ export default function AlunosList({ alunos }: { alunos: Aluno[] }) {
   const [busca, setBusca] = useState("");
   const [tab, setTab] = useState("todos");
   const [novo, setNovo] = useState(false);
-  const [form, setForm] = useState({ nome: "", objetivo: "", plano: "basico", valor: 299 });
+  const [form, setForm] = useState({ nome: "", telefone: "", objetivo: "", plano: "basico", valor: 299 });
+  const [visiveis, setVisiveis] = useState(20);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -51,6 +52,7 @@ export default function AlunosList({ alunos }: { alunos: Aluno[] }) {
     const { error } = await supabase.from("alunos").insert({
       trainer_id: user!.id,
       nome: form.nome,
+      telefone: form.telefone || null,
       objetivo: form.objetivo || null,
       plano: form.plano,
       valor_mensalidade: form.valor,
@@ -60,7 +62,7 @@ export default function AlunosList({ alunos }: { alunos: Aluno[] }) {
     setSalvando(false);
     if (error) return setErro(error.message);
     setNovo(false);
-    setForm({ nome: "", objetivo: "", plano: "basico", valor: 299 });
+    setForm({ nome: "", telefone: "", objetivo: "", plano: "basico", valor: 299 });
     router.refresh();
   }
 
@@ -101,7 +103,7 @@ export default function AlunosList({ alunos }: { alunos: Aluno[] }) {
         {lista.length === 0 && (
           <Card><p className="text-txt2 text-sm text-center py-4">Nenhum aluno encontrado.</p></Card>
         )}
-        {lista.map((a) => {
+        {lista.slice(0, visiveis).map((a) => {
           const st = statusBadge[a.status];
           return (
             <Link key={a.id} href={`/alunos/${a.id}`} className="block">
@@ -119,6 +121,14 @@ export default function AlunosList({ alunos }: { alunos: Aluno[] }) {
             </Link>
           );
         })}
+        {lista.length > visiveis && (
+          <button
+            onClick={() => setVisiveis(visiveis + 20)}
+            className="w-full border border-line rounded-2xl py-3 text-sm font-bold text-txt2 hover:bg-card transition-all duration-150"
+          >
+            Mostrar mais ({lista.length - visiveis} restantes)
+          </button>
+        )}
       </div>
 
       {novo && (
@@ -132,8 +142,11 @@ export default function AlunosList({ alunos }: { alunos: Aluno[] }) {
               <button onClick={() => setNovo(false)}><IconX size={20} className="text-txt2" /></button>
             </div>
             <form onSubmit={criar} className="space-y-3">
-              <input className="input" placeholder="Nome completo" required value={form.nome}
+              <input className="input" placeholder="Nome completo" required minLength={2} value={form.nome}
                 onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+              <input className="input" type="tel" placeholder="WhatsApp (DDD + número)" value={form.telefone}
+                pattern="[\d\s()+-]{8,20}" title="Telefone com DDD, ex: 11 99999-9999"
+                onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
               <input className="input" placeholder="Objetivo (ex: Perder 5kg)" value={form.objetivo}
                 onChange={(e) => setForm({ ...form, objetivo: e.target.value })} />
               <div className="flex gap-3">

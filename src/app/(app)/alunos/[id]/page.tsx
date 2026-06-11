@@ -6,9 +6,11 @@ import { brl, hora, idade } from "@/lib/format";
 import WeightChart from "./WeightChart";
 import AlunoTools from "./AlunoTools";
 import Anamnese from "./Anamnese";
+import { linkWhatsApp, msgLembrete } from "@/lib/whatsapp";
 import {
   IconArrowLeft,
   IconBarbell,
+  IconBrandWhatsapp,
   IconCalendarPlus,
   IconMessage,
 } from "@tabler/icons-react";
@@ -61,9 +63,9 @@ export default async function AlunoPage({ params }: { params: { id: string } }) 
     .eq("aluno_id", params.id)
     .eq("status", "realizada");
 
-  const treino = (vinculo?.treinos as any) ?? null;
-  const exercicios = (treino?.exercicios ?? [])
-    .sort((a: any, b: any) => a.ordem - b.ordem)
+  const treino = vinculo?.treinos ?? null;
+  const exercicios = [...(treino?.exercicios ?? [])]
+    .sort((a, b) => a.ordem - b.ordem)
     .slice(0, 3);
   const st = statusBadge[aluno.status];
   const anos = idade(aluno.data_nascimento);
@@ -150,7 +152,7 @@ export default async function AlunoPage({ params }: { params: { id: string } }) 
         <section>
           <h3 className="font-black text-sm mb-2">Treino atual — {treino.nome}</h3>
           <Card className="space-y-3">
-            {exercicios.map((ex: any) => (
+            {exercicios.map((ex) => (
               <div key={ex.nome} className="flex items-center gap-3">
                 <div
                   className="w-9 h-9 rounded-xl flex items-center justify-center"
@@ -180,7 +182,7 @@ export default async function AlunoPage({ params }: { params: { id: string } }) 
         </section>
       )}
 
-      <Anamnese alunoId={params.id} dados={anamnese as any} />
+      <Anamnese alunoId={params.id} dados={anamnese} />
 
       <section>
         <h3 className="font-black text-sm mb-2">Últimas sessões</h3>
@@ -193,7 +195,7 @@ export default async function AlunoPage({ params }: { params: { id: string } }) 
                   <p className="text-sm font-bold">
                     {new Date(s.inicio).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })} · {hora(s.inicio)}
                   </p>
-                  <p className="text-[11px] text-txt2">{(s.treinos as any)?.nome ?? "Treino"}</p>
+                  <p className="text-[11px] text-txt2">{s.treinos?.nome ?? "Treino"}</p>
                 </div>
                 <Badge variant={sb.variant}>{sb.label}</Badge>
               </Card>
@@ -212,6 +214,17 @@ export default async function AlunoPage({ params }: { params: { id: string } }) 
         >
           <IconMessage size={18} /> Mensagem
         </Link>
+        {aluno.telefone && (
+          <a
+            href={linkWhatsApp(aluno.telefone, msgLembrete(aluno.nome, "amanhã", "no horário combinado"))}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Chamar no WhatsApp"
+            className="border border-[#25D366]/40 text-[#25D366] rounded-2xl py-3.5 px-4 flex items-center justify-center hover:bg-[#25D366]/10 transition-all duration-150"
+          >
+            <IconBrandWhatsapp size={18} />
+          </a>
+        )}
         <Link
           href="/agenda"
           className="flex-1 bg-accent text-bg rounded-2xl py-3.5 font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all duration-150"

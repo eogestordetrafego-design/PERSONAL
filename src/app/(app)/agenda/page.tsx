@@ -51,7 +51,7 @@ export default function AgendaPage() {
       .gte("inicio", ini.toISOString())
       .lte("inicio", fim.toISOString())
       .order("inicio");
-    const all = (data as any as Sessao[]) ?? [];
+    const all: Sessao[] = data ?? [];
     setDotsDias(new Set(all.map((s) => new Date(s.inicio).toDateString())));
     setSessoes(all);
     setLoading(false);

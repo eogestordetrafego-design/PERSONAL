@@ -114,7 +114,7 @@ export default async function RelatorioPage({ params }: { params: { id: string }
                   <td className="p-3">
                     {new Date(s.inicio).toLocaleDateString("pt-BR")} · {hora(s.inicio)}
                   </td>
-                  <td className="p-3">{(s.treinos as any)?.nome ?? "Treino"}</td>
+                  <td className="p-3">{s.treinos?.nome ?? "Treino"}</td>
                   <td className={`p-3 text-right font-bold ${s.status === "realizada" ? "text-accent" : s.status === "cancelada" ? "text-danger" : "text-txt2"}`}>
                     {s.status}
                   </td>
