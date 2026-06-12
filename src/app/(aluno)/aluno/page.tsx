@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { hora, saudacao } from "@/lib/format";
 import TreinoDoDia from "./TreinoDoDia";
 import SairButton from "./SairButton";
+import PushToggle from "@/components/PushToggle";
 import { Card } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -73,6 +74,11 @@ export default async function AlunoHome() {
           <p className="text-2xl font-black">{hora(sessaoHoje.inicio)}</p>
         </div>
       )}
+
+      <Card className="flex items-center justify-between !py-3">
+        <p className="text-sm font-bold">🔔 Lembretes de treino</p>
+        <PushToggle alunoId={aluno!.id} />
+      </Card>
 
       {jaTreinouHoje && (
         <Card className="border-accent/40">

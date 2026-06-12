@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, ProgressBar } from "@/components/ui";
 import WeightChart from "@/app/(app)/alunos/[id]/WeightChart";
+import CargaChart from "@/components/CargaChart";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export default async function EvolucaoPage() {
     .eq("user_id", user!.id)
     .single();
 
-  const [{ data: medidas }, { count: treinosFeitos }] = await Promise.all([
+  const [{ data: medidas }, { count: treinosFeitos }, { data: execs }] = await Promise.all([
     supabase
       .from("medidas")
       .select("data, peso_kg, gordura_pct, imc")
@@ -26,7 +27,17 @@ export default async function EvolucaoPage() {
       .from("treino_logs")
       .select("*", { count: "exact", head: true })
       .eq("aluno_id", aluno!.id),
+    supabase
+      .from("execucoes")
+      .select("nome, carga_kg, treino_logs!inner(aluno_id, data)")
+      .eq("treino_logs.aluno_id", aluno!.id),
   ]);
+
+  const pontosCarga = (execs ?? []).map((e) => ({
+    nome: e.nome,
+    carga: Number(e.carga_kg ?? 0),
+    data: (e.treino_logs as { data: string } | null)?.data ?? "",
+  }));
 
   const meds = medidas ?? [];
   const atual = meds.length ? Number(meds[meds.length - 1].peso_kg) : null;
@@ -86,6 +97,13 @@ export default async function EvolucaoPage() {
           <p className="text-txt2 text-sm text-center py-4">
             Seu treinador registra suas medidas nas avaliações — em breve seu gráfico aparece aqui. 📈
           </p>
+        </Card>
+      )}
+
+      {pontosCarga.length > 1 && (
+        <Card>
+          <h3 className="font-black text-sm mb-2">Minha força 💪 (carga por exercício)</h3>
+          <CargaChart pontos={pontosCarga} />
         </Card>
       )}
     </div>

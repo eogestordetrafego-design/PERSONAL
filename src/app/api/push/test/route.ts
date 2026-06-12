@@ -18,10 +18,17 @@ export async function POST() {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 });
 
-  const { data: subs } = await supabase
-    .from("push_subscriptions")
-    .select("endpoint, p256dh, auth")
-    .eq("trainer_id", user.id);
+  // trainer ou aluno?
+  const { data: aluno } = await supabase
+    .from("alunos")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const query = supabase.from("push_subscriptions").select("endpoint, p256dh, auth");
+  const { data: subs } = aluno
+    ? await query.eq("aluno_id", aluno.id)
+    : await query.eq("trainer_id", user.id);
 
   const payload = JSON.stringify({
     title: "FitCoach Pro 🔔",

@@ -402,30 +402,40 @@ export type Database = {
       }
       push_subscriptions: {
         Row: {
+          aluno_id: string | null
           auth: string
           criado_em: string
           endpoint: string
           id: string
           p256dh: string
-          trainer_id: string
+          trainer_id: string | null
         }
         Insert: {
+          aluno_id?: string | null
           auth: string
           criado_em?: string
           endpoint: string
           id?: string
           p256dh: string
-          trainer_id: string
+          trainer_id?: string | null
         }
         Update: {
+          aluno_id?: string | null
           auth?: string
           criado_em?: string
           endpoint?: string
           id?: string
           p256dh?: string
-          trainer_id?: string
+          trainer_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "push_subscriptions_trainer_id_fkey"
             columns: ["trainer_id"]

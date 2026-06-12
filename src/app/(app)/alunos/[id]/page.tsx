@@ -6,6 +6,7 @@ import { brl, hora, idade } from "@/lib/format";
 import WeightChart from "./WeightChart";
 import AlunoTools from "./AlunoTools";
 import Anamnese from "./Anamnese";
+import CargaChart from "@/components/CargaChart";
 import { linkWhatsApp, msgLembrete } from "@/lib/whatsapp";
 import {
   IconArrowLeft,
@@ -37,6 +38,25 @@ export default async function AlunoPage({ params }: { params: { id: string } }) 
         .limit(1)
         .maybeSingle(),
     ]);
+
+  const [{ data: logs }, { data: execs }] = await Promise.all([
+    supabase
+      .from("treino_logs")
+      .select("id, data, pse, comentario, treinos(nome), execucoes(nome, carga_kg)")
+      .eq("aluno_id", params.id)
+      .order("data", { ascending: false })
+      .limit(3),
+    supabase
+      .from("execucoes")
+      .select("nome, carga_kg, treino_logs!inner(aluno_id, data)")
+      .eq("treino_logs.aluno_id", params.id),
+  ]);
+
+  const pontosCarga = (execs ?? []).map((e) => ({
+    nome: e.nome,
+    carga: Number(e.carga_kg ?? 0),
+    data: (e.treino_logs as { data: string } | null)?.data ?? "",
+  }));
 
   const { data: anamnese } = await supabase
     .from("anamneses")
@@ -183,6 +203,45 @@ export default async function AlunoPage({ params }: { params: { id: string } }) 
             ))}
           </Card>
         </section>
+      )}
+
+      {(logs ?? []).length > 0 && (
+        <section>
+          <h3 className="font-black text-sm mb-2">Treinos registrados pelo aluno 📲</h3>
+          <div className="space-y-2">
+            {(logs ?? []).map((l) => (
+              <Card key={l.id} className="!py-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-bold">
+                      {new Date(l.data).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })} · {l.treinos?.nome ?? "Treino"}
+                    </p>
+                    <p className="text-[11px] text-txt2">{l.execucoes.length} exercícios registrados</p>
+                  </div>
+                  {l.pse && (
+                    <span
+                      className={`text-xs font-black px-2.5 py-1.5 rounded-xl ${
+                        l.pse <= 4 ? "bg-accent/15 text-accent" : l.pse <= 7 ? "bg-warn/15 text-warn" : "bg-danger/15 text-danger"
+                      }`}
+                    >
+                      PSE {l.pse}
+                    </span>
+                  )}
+                </div>
+                {l.comentario && (
+                  <p className="text-[11px] text-txt2 mt-2 italic">&quot;{l.comentario}&quot;</p>
+                )}
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {pontosCarga.length > 1 && (
+        <Card>
+          <h3 className="font-black text-sm mb-2">Progressão de carga</h3>
+          <CargaChart pontos={pontosCarga} />
+        </Card>
       )}
 
       <Anamnese alunoId={params.id} dados={anamnese} />
