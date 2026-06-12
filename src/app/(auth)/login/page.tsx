@@ -7,7 +7,7 @@ import { IconBolt, IconBrandGoogle } from "@tabler/icons-react";
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "signup">("login");
-  const [email, setEmail] = useState("rafael@fitcoach.com");
+  const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [nome, setNome] = useState("");
   const [erro, setErro] = useState<string | null>(null);

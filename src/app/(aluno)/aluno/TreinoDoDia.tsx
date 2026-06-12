@@ -23,7 +23,15 @@ type Treino = {
   exercicios: Exercicio[];
 };
 
-export default function TreinoDoDia({ alunoId, treino }: { alunoId: string; treino: Treino }) {
+export default function TreinoDoDia({
+  alunoId,
+  treino,
+  concluidoHoje = false,
+}: {
+  alunoId: string;
+  treino: Treino;
+  concluidoHoje?: boolean;
+}) {
   const router = useRouter();
   const [feitos, setFeitos] = useState<Set<string>>(new Set());
   const [cargas, setCargas] = useState<Record<string, number>>(
@@ -147,10 +155,12 @@ export default function TreinoDoDia({ alunoId, treino }: { alunoId: string; trei
 
       <button
         onClick={() => setModal(true)}
-        disabled={feitos.size === 0}
+        disabled={concluidoHoje || feitos.size === 0}
         className="w-full bg-accent text-bg font-bold rounded-2xl py-3.5 active:scale-[0.98] transition-all duration-150 disabled:opacity-40"
       >
-        Concluir treino ({feitos.size}/{treino.exercicios.length})
+        {concluidoHoje
+          ? "Concluído hoje ✓"
+          : `Concluir treino (${feitos.size}/${treino.exercicios.length})`}
       </button>
 
       {modal && (

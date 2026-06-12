@@ -89,6 +89,7 @@ export default async function AlunoHome() {
       {treino ? (
         <TreinoDoDia
           alunoId={aluno!.id}
+          concluidoHoje={!!jaTreinouHoje}
           treino={{
             id: treino.id,
             nome: treino.nome,
