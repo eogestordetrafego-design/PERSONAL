@@ -16,7 +16,9 @@ export default function CargaChart({ pontos }: { pontos: ExecucaoPonto[] }) {
   const exercicios = useMemo(() => {
     const contagem = new Map<string, number>();
     pontos.forEach((p) => contagem.set(p.nome, (contagem.get(p.nome) ?? 0) + 1));
-    return [...contagem.entries()].sort((a, b) => b[1] - a[1]).map(([nome]) => nome);
+    return Array.from(contagem.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([nome]) => nome);
   }, [pontos]);
 
   const [exercicio, setExercicio] = useState(exercicios[0] ?? "");
